@@ -1,11 +1,74 @@
+# -*- coding: cp936 -*-
+
 import argparse
 import time
 import json
 import requests
 import pymongo
+import re
+import pprint
+
+word = re.compile(r'^(%[0-9A-Z][0-9A-Z])+$')
+words = re.compile(r'(%[0-9A-Z][0-9A-Z])')
+def charrepl(matchobj):
+    cha  = matchobj.group(0)
+    ch = chr(int(cha[1:],16))
+    if ch == ';' :
+        return ch + '\n'
+    elif ch == '[' :
+        return '\n' + ch
+    else :
+        return ch
+    
+def ppre(url):
+    #print(re.sub(r'%[0-9A-Z][0-9A-Z]', ' ', url))
+    print(re.sub(r'%[0-9A-Z][0-9A-Z]', charrepl, url))
+    #re.match(url)
+    ls = re.findall(r'%[0-9A-Z][0-9A-Z]', url)
+    m = {}
+    for l in ls:
+        if m.has_key(l):
+            m[l] = m[l] + 1
+        else:
+            m[l] = 1
+    print m
+    ke =  m.keys()
+    for k in ke:
+        print k
+        char = chr(int(k[1:],16))
+        print char
+    #print hex(ord('['))
+    #print re.sub(words, ' ', url)    
+    return
+
+def prn_url():
+    url = "https://www.zhihu.com/api/v4/topics/" + str(19554298) + "/feeds/essence?include=data%5B%3F(target.type%3Dtopic_sticky_module)%5D.target.data%5B%3F(target.type%3Danswer)%5D.target.content%2Crelationship.is_authorized%2Cis_author%2Cvoting%2Cis_thanked%2Cis_nothelp%3Bdata%5B%3F(target.type%3Dtopic_sticky_module)%5D.target.data%5B%3F(target.type%3Danswer)%5D.target.is_normal%2Ccomment_count%2Cvoteup_count%2Ccontent%2Crelevant_info%2Cexcerpt.author.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Dtopic_sticky_module)%5D.target.data%5B%3F(target.type%3Darticle)%5D.target.content%2Cvoteup_count%2Ccomment_count%2Cvoting%2Cauthor.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Dtopic_sticky_module)%5D.target.data%5B%3F(target.type%3Dpeople)%5D.target.answer_count%2Carticles_count%2Cgender%2Cfollower_count%2Cis_followed%2Cis_following%2Cbadge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Danswer)%5D.target.annotation_detail%2Ccontent%2Crelationship.is_authorized%2Cis_author%2Cvoting%2Cis_thanked%2Cis_nothelp%3Bdata%5B%3F(target.type%3Danswer)%5D.target.author.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Darticle)%5D.target.annotation_detail%2Ccontent%2Cauthor.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Dquestion)%5D.target.annotation_detail%2Ccomment_count&limit=10&offset=" + str(0)
+    ppre(url)
+    return
+
+def prn_topic(topic_id):
+    url = "https://www.zhihu.com/api/v4/topics/" + str(topic_id)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36",
+    }
+    r = requests.get(url, verify=True, headers=headers)
+    content = r.content.decode("utf-8")
+    data = json.loads(content)
+    #pprint.pprint(u"{}\n".format(data))
+    if data.has_key("meta"):
+        name =  data["meta"]["name"]
+        if name :
+            print name
+    else :
+        if data.has_key("name"):
+            print data["name"]
+        else :
+            print url
+    return
 
 def get_answers_by_page(topic_id, page_no):
     offset = page_no * 10
+    offset = page_no
     url = "https://www.zhihu.com/api/v4/topics/" + str(topic_id) + "/feeds/essence?include=data%5B%3F(target.type%3Dtopic_sticky_module)%5D.target.data%5B%3F(target.type%3Danswer)%5D.target.content%2Crelationship.is_authorized%2Cis_author%2Cvoting%2Cis_thanked%2Cis_nothelp%3Bdata%5B%3F(target.type%3Dtopic_sticky_module)%5D.target.data%5B%3F(target.type%3Danswer)%5D.target.is_normal%2Ccomment_count%2Cvoteup_count%2Ccontent%2Crelevant_info%2Cexcerpt.author.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Dtopic_sticky_module)%5D.target.data%5B%3F(target.type%3Darticle)%5D.target.content%2Cvoteup_count%2Ccomment_count%2Cvoting%2Cauthor.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Dtopic_sticky_module)%5D.target.data%5B%3F(target.type%3Dpeople)%5D.target.answer_count%2Carticles_count%2Cgender%2Cfollower_count%2Cis_followed%2Cis_following%2Cbadge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Danswer)%5D.target.annotation_detail%2Ccontent%2Crelationship.is_authorized%2Cis_author%2Cvoting%2Cis_thanked%2Cis_nothelp%3Bdata%5B%3F(target.type%3Danswer)%5D.target.author.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Darticle)%5D.target.annotation_detail%2Ccontent%2Cauthor.badge%5B%3F(type%3Dbest_answerer)%5D.topics%3Bdata%5B%3F(target.type%3Dquestion)%5D.target.annotation_detail%2Ccomment_count&limit=10&offset=" + str(page_no)
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36",
@@ -26,6 +89,7 @@ def get_answers(topic_id):
     page_no = 0
     client = pymongo.MongoClient()
     db = client["zhihu"]
+        
     while True:
         is_saved = db.saved_topics.find({"topic_id": topic_id, "page_no": page_no}).count()
         if is_saved:
@@ -60,7 +124,8 @@ def query():
             continue
         url = item["target"]["url"]
         print("=" * 50)
-        print("Q: {}\nA: {}\nvote: {}".format(question, answer, vote_num))
+        print question
+        print(u"Q: {}\nA: {}\nvote: {}".format(question, answer, vote_num))
         answer_ids.append(answer_id)
 
 if __name__ == "__main__":
@@ -68,9 +133,15 @@ if __name__ == "__main__":
     parser.add_argument("--save", help="save data", action="store_true", dest="save")
     parser.add_argument("--query", help="query data", action="store_true", dest="query")
     args = parser.parse_args()
-
-    if args.save:
-        topic_ids = [19554298, 19552330, 19565652, 19580349, 19939299, 19555547, 19594551, 19552832, 19577377, 19552826, 19615452]
+    
+    topic_ids = [19554298, 19552330, 19565652, 19580349, 19939299, 19555547, 19594551, 19552832, 19577377, 19552826, 19615452]
+    prn_url()
+    for topic_id in topic_ids:
+        prn_topic(topic_id)
+        
+    #args.save = True
+    #args.query = True
+    if args.save:        
         for topic_id in topic_ids:
             get_answers(topic_id)
     elif args.query:
